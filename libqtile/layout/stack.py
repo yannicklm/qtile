@@ -131,12 +131,23 @@ class Stack(Layout):
         ("border_normal", "#000000", "Border colour for un-focused winows."),
         ("border_width", 1, "Border width.")
     )
-    def __init__(self, stacks=2, **config):
+    def __init__(self, stacks=2, wmii_style=False, **config):
         """
             - stacks: Number of stacks to start with.
+            - wmii_style: if True, when trying to move a client to a non-existing
+            stack, a new stak will be created to contain the client.
+            (off by default)
         """
         Layout.__init__(self, **config)
+        self.wmii_style = wmii_style
         self.stacks = [_WinStack() for i in range(stacks)]
+
+    def remove_empty_stacks(self):
+        """
+            Remove stacks that do not have any clients in it.
+
+        """
+        self.stacks = [s for s in self.stacks if len(s) != 0]
 
     @property
     def currentStack(self):
@@ -395,12 +406,26 @@ class Stack(Layout):
         """
         if not self.currentStack:
             return
-        next = n%len(self.stacks)
+        if not self.wmii_style:
+            next = n%len(self.stacks)
+        else:
+            if n < 0: #
+                self.stacks.insert(0, _WinStack())
+                next = 0
+            elif n == len(self.stacks):
+                self.stacks.append(_WinStack())
+                next = len(self.stacks) - 1
+            else:
+                next = n
+
         win = self.currentStack.cw
         self.currentStack.remove(win)
         self.stacks[next].add(win)
         self.stacks[next].focus(win)
+        if self.wmii_style:
+            self.remove_empty_stacks()
         self.group.layoutAll()
+
 
     def cmd_info(self):
         return self.info()

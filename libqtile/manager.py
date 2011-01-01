@@ -590,6 +590,26 @@ class Group(command.CommandObject):
         self.qtile.currentScreen.setGroup(n)
         return n.name
 
+    def cmd_switch_to_group_number(self, number):
+        """
+            Show the group with the given position in
+            the groups list
+        """
+        groups = self.qtile.groups
+        try:
+            g = self.qtile.groups[number]
+        except IndexError:
+            return
+        self.qtile.currentScreen.setGroup(g)
+        return g.name
+
+    def cmd_delgroup(self):
+        """
+            Delete current group from the list
+        """
+        print "deleting ", self.name
+        self.qtile.delGroup(self.name)
+
     def cmd_unminimise_all(self):
         """
             Unminimise all windows in this group.
@@ -719,6 +739,7 @@ class Qtile(command.CommandObject):
             config.main(self)
 
         self.groups += self.config.groups[:]
+        self._sortGroups()
         for i in self.groups:
             i._configure(config.layouts, config.floating_layout, self)
             self.groupMap[i.name] = i
@@ -860,6 +881,12 @@ class Qtile(command.CommandObject):
         del(self.keyMap[key_index])
 
 
+    def _sortGroups(self):
+        """
+            Keep groups sorted by name: ala wmii
+        """
+        self.groups.sort(key=lambda x:x.name)
+
     def addGroup(self, name):
         if name not in self.groupMap.keys():
             g = Group(name)
@@ -867,6 +894,7 @@ class Qtile(command.CommandObject):
             g._configure(self.config.layouts, self.config.floating_layout, self)
             self.groupMap[name] = g
             hook.fire("addgroup")
+            self._sortGroups()
             return True
         return False
 
@@ -882,6 +910,7 @@ class Qtile(command.CommandObject):
                 self.currentGroup.cmd_prevgroup()
             self.groups.remove(group)
             del(self.groupMap[name])
+            self._sortGroups()
             hook.fire("delgroup")
 
     def registerWidget(self, w):
@@ -1670,6 +1699,23 @@ class Qtile(command.CommandObject):
             mb.startInput(prompt, self.cmd_spawn, "cmd")
         except:
             self.log.add("No widget named '%s' present."%widget)
+
+    def cmd_addgroupcmd(self, prompt="group:", widget="prompt"):
+        """
+            Create a new group using a prompt widget to let the
+            user enter the new name.
+
+            prompt: Text with which to prompt user
+            widget: Name of the prompt widget (default: "prompt")
+
+            It the widget does not exist nothing happens.
+
+        """
+        prompt_wiget = self.widgetMap.get(widget)
+        if not prompt_wiget:
+            self.log.add("cmd_addgroupcmd: No such widget ('%s')" % widget)
+            return
+        prompt_wiget.startInput(prompt, self.addGroup, None)
 
     def cmd_addgroup(self, group):
         return self.addGroup(group)

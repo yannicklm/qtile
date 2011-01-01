@@ -888,6 +888,20 @@ class Window(_Window):
         """
         self.togroup(groupName)
 
+    def cmd_togroupcmd(self, prompt="group:", widget="prompt"):
+        """
+            Use a prompt widget to let the user
+            specify where to move the window
+
+        """
+        prompt_wiget = self.qtile.widgetMap.get(widget)
+        if not prompt_wiget:
+            self.log.add("cmd_addgroupcmd: No such widget ('%s')" % widget)
+            return
+        prompt_wiget.startInput(prompt, self.togroup, None)
+
+
+
     def cmd_move_floating(self, dx, dy):
         """
             Move window by dx and dy
