@@ -10,6 +10,9 @@ class NullCompleter:
     def complete(self, txt):
         return txt
 
+    def reset(self):
+        pass
+
 class GroupCompleter:
     def __init__(self, qtile):
         self.qtile = qtile
